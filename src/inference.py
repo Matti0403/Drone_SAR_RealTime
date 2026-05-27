@@ -14,7 +14,7 @@ def main():
     # PERCORSI NEUTRALI SU C:\Temp (Bypassa il bug dell'apostrofo su PyTorch)
     safe_root = "C:\\Temp\\Drone_SAR_Inference"
     model_path = os.path.join(safe_root, "modelli_base", "yolo11n-pose-sar-best.pt")
-    project_output = os.path.join(safe_root, "runs")
+    project_output = os.path.join(safe_root, "runs", "optimized_v2")
     
     # Controlli di sicurezza prima di partire
     if not os.path.exists(model_path):
@@ -41,9 +41,9 @@ def main():
         # Eseguiamo il tracking con confidenza a 0.70 contro i falsi positivi
         results = model.track(
             source=source_path,
-            conf=0.25,        
+            conf=0.35,        
             iou=0.45,
-            imgsz=640,
+            imgsz=1280,
             show=False,
             save=True,
             project=project_output,  # Salva i risultati dentro C:\Temp\Drone_SAR_Inference\runs
