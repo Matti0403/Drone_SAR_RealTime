@@ -1,0 +1,18 @@
+# Ambiente virtuale
+venv/
+.venv/
+
+# File temporanei di Python
+**/__pycache__/
+*.pyc
+
+# Risultati locali di YOLO
+runs/
+
+# File di configurazione di VS Code o del sistema
+.vscode/
+.DS_Store
+
+# === DATASET E SATELLITI ===
+# Escludiamo la cartella dei dati per non appesantire Git
+datasets/

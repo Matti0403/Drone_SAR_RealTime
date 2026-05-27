@@ -1,0 +1,9 @@
+# data.yaml
+path: ./datasets/dataset_sar  # Usiamo il percorso relativo rispetto alla cartella principale
+train: images/train
+val: images/val
+
+names:
+  0: person
+
+kpt_shape: [17, 3]
