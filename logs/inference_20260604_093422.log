@@ -1,0 +1,95 @@
+[09:34:22] [INFO] ==============================================================
+[09:34:22] [INFO]   FLYPOSE-SAR — INFERENZA SU SEQUENZE (MODALITA' DRONE)
+[09:34:22] [INFO] ==============================================================
+[09:34:22] [INFO]   Device       : cuda:0
+[09:34:22] [INFO]   GPU          : NVIDIA GeForce RTX 2060
+[09:34:22] [INFO]   Modello      : runs\fase1\fase1_nano\weights\best.pt
+[09:34:22] [INFO]   Sequenze     : C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\datasets\dataset_test_official\sequences
+[09:34:22] [INFO]   Output       : C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\runs\inferenza\run_20260604_093422
+[09:34:22] [INFO]   conf=0.4  iou=0.35  imgsz=1280  tracker=bytetrack.yaml
+[09:34:22] [INFO] 
+[*] Trovate 17 sequenze da processare.
+[09:34:22] [INFO] [*] Caricamento modello...
+[09:34:22] [INFO] [+] Modello caricato.
+
+[09:34:22] [INFO]   [*] Sequenza: uav0000009_03358_v
+[09:35:13] [INFO]     Detection totali    : 2630
+[09:35:13] [INFO]     Persone tracciate   : 25 ID univoci
+[09:35:13] [INFO]     Frame con detection : 207
+[09:35:13] [INFO]   [*] Sequenza: uav0000073_00600_v
+[09:37:19] [INFO]     Detection totali    : 6531
+[09:37:19] [INFO]     Persone tracciate   : 27 ID univoci
+[09:37:19] [INFO]     Frame con detection : 328
+[09:37:19] [INFO]   [*] Sequenza: uav0000073_04464_v
+[09:40:02] [INFO]     Detection totali    : 9280
+[09:40:02] [INFO]     Persone tracciate   : 46 ID univoci
+[09:40:02] [INFO]     Frame con detection : 312
+[09:40:02] [INFO]   [*] Sequenza: uav0000077_00720_v
+[09:41:06] [INFO]     Detection totali    : 1242
+[09:41:06] [INFO]     Persone tracciate   : 6 ID univoci
+[09:41:06] [INFO]     Frame con detection : 651
+[09:41:06] [INFO]   [*] Sequenza: uav0000088_00290_v
+[09:44:23] [INFO]     Detection totali    : 13793
+[09:44:23] [INFO]     Persone tracciate   : 61 ID univoci
+[09:44:23] [INFO]     Frame con detection : 296
+[09:44:23] [INFO]   [*] Sequenza: uav0000119_02301_v
+[09:44:40] [INFO]     Detection totali    : 379
+[09:44:40] [INFO]     Persone tracciate   : 5 ID univoci
+[09:44:40] [INFO]     Frame con detection : 177
+[09:44:40] [INFO]   [*] Sequenza: uav0000120_04775_v
+[09:48:12] [INFO]     Detection totali    : 10413
+[09:48:12] [INFO]     Persone tracciate   : 26 ID univoci
+[09:48:12] [INFO]     Frame con detection : 957
+[09:48:12] [INFO]   [*] Sequenza: uav0000161_00000_v
+[09:49:14] [INFO]     Detection totali    : 2950
+[09:49:14] [INFO]     Persone tracciate   : 17 ID univoci
+[09:49:14] [INFO]     Frame con detection : 308
+[09:49:14] [INFO]   [*] Sequenza: uav0000188_00000_v
+[09:49:35] [INFO]     Detection totali    : 511
+[09:49:35] [INFO]     Persone tracciate   : 7 ID univoci
+[09:49:35] [INFO]     Frame con detection : 224
+[09:49:35] [INFO]   [*] Sequenza: uav0000201_00000_v
+[09:50:20] [INFO]     Detection totali    : 1170
+[09:50:20] [INFO]     Persone tracciate   : 8 ID univoci
+[09:50:20] [INFO]     Frame con detection : 492
+[09:50:20] [INFO]   [*] Sequenza: uav0000249_00001_v
+[09:50:46] [INFO]     Detection totali    : 231
+[09:50:46] [INFO]     Persone tracciate   : 4 ID univoci
+[09:50:46] [INFO]     Frame con detection : 161
+[09:50:46] [INFO]   [*] Sequenza: uav0000249_02688_v
+[09:51:04] [INFO]     Detection totali    : 593
+[09:51:04] [INFO]     Persone tracciate   : 6 ID univoci
+[09:51:04] [INFO]     Frame con detection : 220
+[09:51:04] [INFO]   [*] Sequenza: uav0000297_00000_v
+[09:52:02] [INFO]     Detection totali    : 3443
+[09:52:02] [INFO]     Persone tracciate   : 42 ID univoci
+[09:52:02] [INFO]     Frame con detection : 146
+[09:52:02] [INFO]   [*] Sequenza: uav0000297_02761_v
+[09:55:04] [INFO]     Detection totali    : 10979
+[09:55:04] [INFO]     Persone tracciate   : 42 ID univoci
+[09:55:04] [INFO]     Frame con detection : 373
+[09:55:04] [INFO]   [*] Sequenza: uav0000306_00230_v
+[09:56:05] [INFO]     Detection totali    : 2661
+[09:56:05] [INFO]     Persone tracciate   : 18 ID univoci
+[09:56:05] [INFO]     Frame con detection : 407
+[09:56:05] [INFO]   [*] Sequenza: uav0000355_00001_v
+[09:56:53] [INFO]     Detection totali    : 804
+[09:56:53] [INFO]     Persone tracciate   : 5 ID univoci
+[09:56:53] [INFO]     Frame con detection : 398
+[09:56:53] [INFO]   [*] Sequenza: uav0000370_00001_v
+[09:57:14] [INFO]     Detection totali    : 21
+[09:57:14] [INFO]     Persone tracciate   : 2 ID univoci
+[09:57:14] [INFO]     Frame con detection : 18
+[09:57:14] [INFO] 
+[09:57:14] [INFO] ==============================================================
+[09:57:14] [INFO]   RIEPILOGO INFERENZA
+[09:57:14] [INFO] ==============================================================
+[09:57:14] [INFO]   Sequenze processate   : 17
+[09:57:14] [INFO]   Detection totali      : 67631
+[09:57:14] [INFO]   Persone tracciate     : 347 ID univoci
+[09:57:14] [INFO]   Frame con detection   : 5675
+[09:57:14] [INFO]   Output                : C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\runs\inferenza\run_20260604_093422
+[09:57:14] [INFO]   Report                : C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\runs\inferenza\run_20260604_093422\inference_report.json
+[09:57:14] [INFO] ==============================================================
+[09:57:14] [INFO] 
+[DONE] Inferenza completata.

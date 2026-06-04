@@ -1,0 +1,35 @@
+[12:04:00] [INFO] ==============================================================
+[12:04:00] [INFO]   FLYPOSE-SAR — PREPARAZIONE DATASET (APPROCCIO IBRIDO)
+[12:04:00] [INFO]   Box da GT VisDrone + Keypoints da teacher su crop
+[12:04:00] [INFO] ==============================================================
+[12:04:00] [INFO]   Device        : cuda:0
+[12:04:00] [INFO]   GPU           : NVIDIA GeForce RTX 2060
+[12:04:00] [INFO]   Teacher model : modelli_base/yolo11l-pose.pt
+[12:04:00] [INFO]   Train src     : C:\Dataset_ViSDrone_RGB\VisDrone2019-VID-train
+[12:04:00] [INFO]   Val src       : C:\Dataset_ViSDrone_RGB\VisDrone2019-VID-val
+[12:04:00] [INFO]   Destinazione  : C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\datasets\dataset_sar
+[12:04:00] [INFO]   Filtri        : cat={1, 2}, occ<=1, box>=8x8px
+[12:04:00] [INFO] 
+[*] Caricamento teacher model...
+[12:04:01] [INFO] [+] Teacher model pronto.
+
+[12:04:01] [INFO] [TRAIN] Trovate 56 sequenze.
+[14:11:07] [DEBUG]   [train] uav0000263_03289_v: nessuna persona. Skip.
+[16:04:38] [INFO] [TRAIN] Fatto — Frame salvati: 20420 | Persone GT: 307891 | Annotazioni: 228216 | Kpts falliti: 79675
+[16:04:38] [INFO] [VAL] Pulizia cartelle destinazione...
+[16:04:38] [INFO] [VAL] Trovate 7 sequenze.
+[16:34:30] [INFO] [VAL] Fatto — Frame salvati: 2251 | Persone GT: 47942 | Annotazioni: 37669 | Kpts falliti: 10273
+[16:34:30] [INFO] 
+[16:34:30] [INFO] ==============================================================
+[16:34:30] [INFO]   RIEPILOGO FINALE
+[16:34:30] [INFO] ==============================================================
+[16:34:30] [INFO]   Train — frame salvati    : 20420
+[16:34:30] [INFO]   Train — annotazioni      : 228216
+[16:34:30] [INFO]   Val   — frame salvati    : 2251
+[16:34:30] [INFO]   Val   — annotazioni      : 37669
+[16:34:30] [INFO]   Persone GT totali        : 355833
+[16:34:30] [INFO]   Tasso successo keypoints : 74.7%
+[16:34:30] [INFO]   Report                   : C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\datasets\dataset_sar\dataset_preparation_report.json
+[16:34:30] [INFO] ==============================================================
+[16:34:30] [INFO] 
+[DONE] Preparazione dataset completata.

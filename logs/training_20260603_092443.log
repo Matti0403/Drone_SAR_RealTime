@@ -1,0 +1,80 @@
+[09:24:43] [INFO] ==============================================================
+[09:24:43] [INFO]   FLYPOSE-SAR — TRAINING INCREMENTALE (FASE 1)
+[09:24:43] [INFO] ==============================================================
+[09:24:43] [INFO]   Device      : cuda:0
+[09:24:43] [INFO]   GPU         : NVIDIA GeForce RTX 2060
+[09:24:43] [INFO]   VRAM totale : 6.4 GB
+[09:24:43] [INFO]   Esperimenti : 1
+[09:24:43] [INFO] 
+[09:24:43] [INFO] ==============================================================
+[09:24:43] [INFO]   YOLO11n-Pose — Nano
+[09:24:43] [INFO]   Run : fase1_nano_20260603_092443
+[09:24:43] [INFO]   Epoche: 50  Batch: 16  imgsz: 640
+[09:24:43] [INFO]   Note: Modello piu' leggero. Valida rapidamente il dataset e la pipeline.
+[09:24:43] [INFO] ==============================================================
+[16:00:51] [ERROR]   [ERRORE] fase1_nano: [Errno 2] No such file or directory: 'C:\\Users\\MATTIA-DAGOSTINO\\Desktop\\Drone_SAR_RealTime\\runs\\fase1\\fase1_nano_20260603_092443\\weights\\best.pt'
+Traceback (most recent call last):
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\src\train.py", line 200, in run_experiment
+    results = model.train(
+              ^^^^^^^^^^^^
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\ultralytics\engine\model.py", line 792, in train
+    self.trainer.train()
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\ultralytics\engine\trainer.py", line 246, in train
+    self._do_train()
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\ultralytics\engine\trainer.py", line 582, in _do_train
+    self.final_eval()
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\ultralytics\engine\trainer.py", line 861, in final_eval
+    self.metrics = self.validator(model=model)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\ultralytics\engine\validator.py", line 178, in __call__
+    model = AutoBackend(
+            ^^^^^^^^^^^^
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\ultralytics\nn\autobackend.py", line 220, in __init__
+    self.backend = self._BACKEND_MAP[format](model, **backend_kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\ultralytics\nn\backends\pytorch.py", line 42, in __init__
+    super().__init__(weight, device, fp16)
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\ultralytics\nn\backends\base.py", line 54, in __init__
+    self.load_model(weight)
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\ultralytics\nn\backends\pytorch.py", line 59, in load_model
+    model, _ = load_checkpoint(weight, device=self.device, fuse=self.fuse)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\ultralytics\nn\tasks.py", line 1615, in load_checkpoint
+    ckpt, weight = torch_safe_load(weight)  # load ckpt
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\ultralytics\nn\tasks.py", line 1544, in torch_safe_load
+    ckpt = _load()
+           ^^^^^^^
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\ultralytics\nn\tasks.py", line 1541, in _load
+    return torch_load(file, map_location="cpu")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\ultralytics\utils\patches.py", line 181, in torch_load
+    return torch.load(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\torch\serialization.py", line 1319, in load
+    with _open_file_like(f, "rb") as opened_file:
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\torch\serialization.py", line 659, in _open_file_like
+    return _open_file(name_or_buffer, mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\venv\Lib\site-packages\torch\serialization.py", line 640, in __init__
+    super().__init__(open(name, mode))
+                     ^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\MATTIA-DAGOSTINO\\Desktop\\Drone_SAR_RealTime\\runs\\fase1\\fase1_nano_20260603_092443\\weights\\best.pt'
+[16:00:52] [INFO] 
+[16:00:52] [INFO] ==============================================================
+[16:00:52] [INFO]   CONFRONTO FINALE FASE 1
+[16:00:52] [INFO] ==============================================================
+[16:00:52] [INFO]   Modello                          BoxmAP50  PosemAP50
+[16:00:52] [INFO]   ----------------------------------------------------
+[16:00:52] [INFO] ==============================================================
+[16:00:52] [INFO]   Report: C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\runs\fase1\comparison_report_20260603_160052.json
+[16:00:52] [INFO]   Esegui plot_metrics.py per i grafici.
+[16:00:52] [INFO] 
+[DONE] Training Fase 1 completato.

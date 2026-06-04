@@ -1,0 +1,14 @@
+[09:10:48] [INFO] ==============================================================
+[09:10:48] [INFO]   FLYPOSE-SAR — TRAINING INCREMENTALE (FASE 1)
+[09:10:48] [INFO] ==============================================================
+[09:10:48] [INFO]   Device      : cuda:0
+[09:10:48] [INFO]   GPU         : NVIDIA GeForce RTX 2060
+[09:10:48] [INFO]   VRAM totale : 6.4 GB
+[09:10:48] [INFO]   Esperimenti : 1
+[09:10:48] [INFO] 
+[09:10:48] [INFO] ==============================================================
+[09:10:48] [INFO]   YOLO11n-Pose — Nano
+[09:10:48] [INFO]   Run : fase1_nano_20260603_091048
+[09:10:48] [INFO]   Epoche: 50  Batch: 16  imgsz: 640
+[09:10:48] [INFO]   Note: Modello piu' leggero. Valida rapidamente il dataset e la pipeline.
+[09:10:48] [INFO] ==============================================================

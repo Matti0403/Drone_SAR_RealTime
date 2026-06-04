@@ -1,0 +1,100 @@
+[10:16:50] [INFO] ==============================================================
+[10:16:50] [INFO]   FLYPOSE-SAR — STAZIONE DI TERRA (SAHI)
+[10:16:50] [INFO] ==============================================================
+[10:16:50] [INFO]   Device       : cuda:0
+[10:16:50] [INFO]   Sequenze     : C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\datasets\dataset_test_official\sequences
+[10:16:50] [INFO]   Slice size   : 640px  overlap: 25%
+[10:16:50] [INFO]   conf=0.28  NMS IoU=0.25
+[10:16:50] [INFO] 
+==============================================================
+[10:16:50] [INFO]   MODELLO: OFFICIAL_COCO
+[10:16:50] [INFO]   Path   : yolo11l-pose.pt
+[10:16:50] [INFO] ==============================================================
+[10:17:01] [INFO]   [*] Sequenza: uav0000009_03358_v
+[10:17:57] [INFO]     Detection: 6
+[10:17:57] [INFO]   [*] Sequenza: uav0000073_00600_v
+[10:20:08] [INFO]     Detection: 4621
+[10:20:08] [INFO]   [*] Sequenza: uav0000073_04464_v
+[10:22:33] [INFO]     Detection: 7856
+[10:22:33] [INFO]   [*] Sequenza: uav0000077_00720_v
+[10:26:45] [INFO]     Detection: 409
+[10:26:45] [INFO]   [*] Sequenza: uav0000088_00290_v
+[10:27:18] [INFO]     Detection: 433
+[10:27:18] [INFO]   [*] Sequenza: uav0000119_02301_v
+[10:28:14] [INFO]     Detection: 44
+[10:28:14] [INFO]   [*] Sequenza: uav0000120_04775_v
+[10:33:25] [INFO]     Detection: 458
+[10:33:25] [INFO]   [*] Sequenza: uav0000161_00000_v
+[10:33:58] [INFO]     Detection: 76
+[10:33:58] [INFO]   [*] Sequenza: uav0000188_00000_v
+[10:34:24] [INFO]     Detection: 0
+[10:34:24] [INFO]   [*] Sequenza: uav0000201_00000_v
+[10:37:41] [INFO]     Detection: 50
+[10:37:41] [INFO]   [*] Sequenza: uav0000249_00001_v
+[10:40:04] [INFO]     Detection: 40
+[10:40:04] [INFO]   [*] Sequenza: uav0000249_02688_v
+[10:41:17] [INFO]     Detection: 7
+[10:41:17] [INFO]   [*] Sequenza: uav0000297_00000_v
+[10:42:29] [INFO]     Detection: 1686
+[10:42:29] [INFO]   [*] Sequenza: uav0000297_02761_v
+[10:45:19] [INFO]     Detection: 5945
+[10:45:19] [INFO]   [*] Sequenza: uav0000306_00230_v
+[10:45:58] [INFO]     Detection: 164
+[10:45:58] [INFO]   [*] Sequenza: uav0000355_00001_v
+[10:48:33] [INFO]     Detection: 106
+[10:48:33] [INFO]   [*] Sequenza: uav0000370_00001_v
+[10:52:42] [INFO]     Detection: 9
+[10:52:42] [INFO] 
+  [OK] OFFICIAL_COCO — Totale detection: 21910
+[10:52:42] [INFO] 
+==============================================================
+[10:52:42] [INFO]   MODELLO: CUSTOM_SAR
+[10:52:42] [INFO]   Path   : runs\fase1\fase1_nano\weights\best.pt
+[10:52:42] [INFO] ==============================================================
+[10:52:42] [INFO]   [*] Sequenza: uav0000009_03358_v
+[10:53:28] [INFO]     Detection: 3188
+[10:53:28] [INFO]   [*] Sequenza: uav0000073_00600_v
+[10:54:55] [INFO]     Detection: 13892
+[10:54:55] [INFO]   [*] Sequenza: uav0000073_04464_v
+[10:56:22] [INFO]     Detection: 14624
+[10:56:22] [INFO]   [*] Sequenza: uav0000077_00720_v
+[10:58:41] [INFO]     Detection: 2205
+[10:58:41] [INFO]   [*] Sequenza: uav0000088_00290_v
+[10:59:04] [INFO]     Detection: 14672
+[10:59:04] [INFO]   [*] Sequenza: uav0000119_02301_v
+[10:59:35] [INFO]     Detection: 994
+[10:59:35] [INFO]   [*] Sequenza: uav0000120_04775_v
+[11:02:30] [INFO]     Detection: 18614
+[11:02:30] [INFO]   [*] Sequenza: uav0000161_00000_v
+[11:02:54] [INFO]     Detection: 3211
+[11:02:54] [INFO]   [*] Sequenza: uav0000188_00000_v
+[11:03:13] [INFO]     Detection: 2100
+[11:03:13] [INFO]   [*] Sequenza: uav0000201_00000_v
+[11:05:01] [INFO]     Detection: 4355
+[11:05:01] [INFO]   [*] Sequenza: uav0000249_00001_v
+[11:06:19] [INFO]     Detection: 740
+[11:06:19] [INFO]   [*] Sequenza: uav0000249_02688_v
+[11:06:59] [INFO]     Detection: 1522
+[11:06:59] [INFO]   [*] Sequenza: uav0000297_00000_v
+[11:07:32] [INFO]     Detection: 8307
+[11:07:32] [INFO]   [*] Sequenza: uav0000297_02761_v
+[11:08:54] [INFO]     Detection: 24828
+[11:08:54] [INFO]   [*] Sequenza: uav0000306_00230_v
+[11:09:19] [INFO]     Detection: 3431
+[11:09:19] [INFO]   [*] Sequenza: uav0000355_00001_v
+[11:10:55] [INFO]     Detection: 1788
+[11:10:55] [INFO]   [*] Sequenza: uav0000370_00001_v
+[11:12:53] [INFO]     Detection: 609
+[11:12:53] [INFO] 
+  [OK] CUSTOM_SAR — Totale detection: 119080
+[11:12:53] [INFO] 
+[11:12:53] [INFO] ==============================================================
+[11:12:53] [INFO]   CONFRONTO FINALE
+[11:12:53] [INFO] ==============================================================
+[11:12:53] [INFO]   Modello COCO ufficiale : 21910 detection
+[11:12:53] [INFO]   Modello custom SAR     : 119080 detection
+[11:12:53] [INFO]   Delta                  : +97170
+[11:12:53] [INFO]   Report                 : C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime\runs\ground_station\run_20260604_101650\comparison_report.json
+[11:12:53] [INFO] ==============================================================
+[11:12:53] [INFO] 
+[DONE] Stazione di terra completata.
