@@ -1,0 +1,12 @@
+# data_test.yaml — usato da evaluate.py
+path: C:\Temp\dataset_test_yolo
+train: images/test
+val:   images/test
+test:  images/test
+
+nc: 1
+names:
+  0: person
+
+kpt_shape: [17, 3]
+flip_idx: [0, 2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15]

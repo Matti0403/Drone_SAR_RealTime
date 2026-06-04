@@ -362,11 +362,14 @@ def evaluate_model(run: dict, data_yaml: str, device: str,
         # sul dataset specificato in data_yaml, split "test"
         val_results = model.val(
             data    = data_yaml,
-            split   = "test",       # usa la split "test" del data.yaml
+            split   = "test",
             imgsz   = run["imgsz"],
             device  = device,
             verbose = False,
-            plots   = False,        # i grafici li generiamo noi per avere controllo
+            plots   = False,
+            project = r"C:\Temp\eval_results",
+            name    = run["experiment_id"],
+            exist_ok= True,
         )
 
         # Estrai metriche dal risultato

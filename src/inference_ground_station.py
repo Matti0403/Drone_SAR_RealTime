@@ -53,8 +53,14 @@ from ultralytics import YOLO
 # CONFIGURAZIONE MODELLI DA CONFRONTARE
 # Sostituisci CUSTOM_MODEL_PATH con il percorso al tuo best.pt
 # ---------------------------------------------------------------------------
-OFFICIAL_MODEL_PATH = "yolo11l-pose.pt"
-CUSTOM_MODEL_PATH = r"runs\fase1\fase1_nano\weights\best.pt"
+
+# -----PRIMA VERSIONE-----
+#OFFICIAL_MODEL_PATH = "yolo11l-pose.pt"
+#CUSTOM_MODEL_PATH = r"runs\fase1\fase1_nano\weights\best.pt"
+
+# -----SECONDA VERSIONE-----
+OFFICIAL_MODEL_PATH = r"runs\fase1\fase1_nano\weights\best.pt"
+CUSTOM_MODEL_PATH   = r"runs\fase1\fase1_small\weights\best.pt"
 
 TEST_SEQ_DIR  = None   # None = usa percorso relativo al progetto
 
@@ -380,14 +386,28 @@ def main():
         logger.error(f"Dataset test non trovato: {test_seq_dir}")
         sys.exit(1)
 
+    # ----- PRIMA VERSIONE -----
+
     # Esegui entrambi i modelli
+    #result_official = run_pipeline(
+    #    OFFICIAL_MODEL_PATH, "OFFICIAL_COCO",
+    #   test_seq_dir, output_base, device, logger
+    #)
+
+    #result_custom = run_pipeline(
+    #    CUSTOM_MODEL_PATH, "CUSTOM_SAR",
+    #    test_seq_dir, output_base, device, logger
+    #)
+
+    # ----- SECONDA VERSIONE -----
+    
     result_official = run_pipeline(
-        OFFICIAL_MODEL_PATH, "OFFICIAL_COCO",
+        OFFICIAL_MODEL_PATH, "NANO_SAR",
         test_seq_dir, output_base, device, logger
     )
 
     result_custom = run_pipeline(
-        CUSTOM_MODEL_PATH, "CUSTOM_SAR",
+        CUSTOM_MODEL_PATH, "SMALL_SAR",
         test_seq_dir, output_base, device, logger
     )
 

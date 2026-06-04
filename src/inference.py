@@ -47,7 +47,7 @@ from ultralytics import YOLO
 # Modifica MODEL_PATH con il percorso al best.pt del tuo run migliore.
 # Trovi il percorso nel comparison_report_*.json sotto "best_weights".
 # ---------------------------------------------------------------------------
-MODEL_PATH   = r"runs\fase1\fase1_nano\weights\best.pt"
+MODEL_PATH   = r"runs\fase1\fase1_small\weights\best.pt"
 TEST_SEQ_DIR = None   # None = usa il percorso relativo al progetto (vedi main)
 
 CONF_THRESHOLD = 0.40
