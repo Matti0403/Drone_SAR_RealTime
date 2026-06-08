@@ -1,0 +1,110 @@
+{
+  "generated_at": "2026-06-08T11:29:18.235358",
+  "phase": "Fase 1 — Baseline RGB",
+  "test_source": "C:\\Users\\MATTIA-D'AGOSTINO\\Desktop\\Drone_SAR_RealTime\\datasets\\dataset_test_official",
+  "used_val_as_test": false,
+  "models_evaluated": 3,
+  "results": [
+    {
+      "label": "YOLO11l-Pose — Large",
+      "run_name": "fase1_large_20260605_071759",
+      "experiment_id": "fase1_large",
+      "best_weights": "C:\\Temp\\fase1_large\\weights\\best.pt",
+      "status": "COMPLETED",
+      "test_metrics": {
+        "box_precision": 0.6491557457135825,
+        "box_recall": 0.5626417976810735,
+        "box_mAP50": 0.5960853131052677,
+        "box_mAP50_95": 0.2379319745148066,
+        "pose_mAP50": 0.38524054079233877,
+        "pose_mAP50_95": 0.16868482891688047,
+        "box_f1": 0.6028105234808789
+      },
+      "train_metrics": {
+        "box_precision": 0.7216321753369238,
+        "box_recall": 0.6918420982770979,
+        "box_mAP50": 0.7226228319616551,
+        "box_mAP50_95": 0.30074648121104575,
+        "pose_mAP50": 0.5284714016005918,
+        "pose_mAP50_95": 0.23126858351284443,
+        "val_box_loss": 0.0,
+        "val_pose_loss": 0.0
+      }
+    },
+    {
+      "label": "YOLO11n-Pose — Nano",
+      "run_name": "fase1_nano_20260603_102638",
+      "experiment_id": "fase1_nano",
+      "best_weights": "C:\\Temp\\fase1_nano\\weights\\best.pt",
+      "status": "COMPLETED",
+      "test_metrics": {
+        "box_precision": 0.5865022162712017,
+        "box_recall": 0.4584953199639734,
+        "box_mAP50": 0.4738580406902749,
+        "box_mAP50_95": 0.1750490262594274,
+        "pose_mAP50": 0.1869367125440906,
+        "pose_mAP50_95": 0.06159213389999626,
+        "box_f1": 0.5146586704455668
+      },
+      "train_metrics": {
+        "box_precision": 0.670108226441736,
+        "box_recall": 0.6027502721070376,
+        "box_mAP50": 0.6314131747042983,
+        "box_mAP50_95": 0.24744435312738725,
+        "pose_mAP50": 0.29591887222564167,
+        "pose_mAP50_95": 0.09446002879343221,
+        "val_box_loss": 0.0,
+        "val_pose_loss": 0.0
+      }
+    },
+    {
+      "label": "YOLO11s-Pose — Small",
+      "run_name": "fase1_small_20260604_070431",
+      "experiment_id": "fase1_small",
+      "best_weights": "C:\\Temp\\fase1_small\\weights\\best.pt",
+      "status": "COMPLETED",
+      "test_metrics": {
+        "box_precision": 0.620419071529398,
+        "box_recall": 0.5121681077073966,
+        "box_mAP50": 0.5399980067384876,
+        "box_mAP50_95": 0.20777261315912274,
+        "pose_mAP50": 0.300445728122064,
+        "pose_mAP50_95": 0.11591403255680002,
+        "box_f1": 0.5611203581960317
+      },
+      "train_metrics": {
+        "box_precision": 0.6945918224815811,
+        "box_recall": 0.661711221428761,
+        "box_mAP50": 0.6784246893499446,
+        "box_mAP50_95": 0.2861829719468455,
+        "pose_mAP50": 0.433578846313613,
+        "pose_mAP50_95": 0.16526259946167107,
+        "val_box_loss": 0.0,
+        "val_pose_loss": 0.0
+      }
+    }
+  ],
+  "ranking_by_pose_mAP50": [
+    {
+      "label": "YOLO11l-Pose — Large",
+      "pose_mAP50": 0.38524054079233877,
+      "box_mAP50": 0.5960853131052677,
+      "box_f1": 0.6028105234808789,
+      "best_weights": "C:\\Temp\\fase1_large\\weights\\best.pt"
+    },
+    {
+      "label": "YOLO11s-Pose — Small",
+      "pose_mAP50": 0.300445728122064,
+      "box_mAP50": 0.5399980067384876,
+      "box_f1": 0.5611203581960317,
+      "best_weights": "C:\\Temp\\fase1_small\\weights\\best.pt"
+    },
+    {
+      "label": "YOLO11n-Pose — Nano",
+      "pose_mAP50": 0.1869367125440906,
+      "box_mAP50": 0.4738580406902749,
+      "box_f1": 0.5146586704455668,
+      "best_weights": "C:\\Temp\\fase1_nano\\weights\\best.pt"
+    }
+  ]
+}

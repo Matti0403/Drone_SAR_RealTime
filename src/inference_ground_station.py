@@ -59,8 +59,12 @@ from ultralytics import YOLO
 #CUSTOM_MODEL_PATH = r"runs\fase1\fase1_nano\weights\best.pt"
 
 # -----SECONDA VERSIONE-----
-OFFICIAL_MODEL_PATH = r"runs\fase1\fase1_nano\weights\best.pt"
-CUSTOM_MODEL_PATH   = r"runs\fase1\fase1_small\weights\best.pt"
+#OFFICIAL_MODEL_PATH = r"runs\fase1\fase1_nano\weights\best.pt"
+#CUSTOM_MODEL_PATH   = r"runs\fase1\fase1_small\weights\best.pt"
+
+# -----TERZA VERSIONE-----
+OFFICIAL_MODEL_PATH = r"runs\fase1\fase1_small\weights\best.pt"
+CUSTOM_MODEL_PATH   = r"runs\fase1\fase1_large\weights\best.pt"
 
 TEST_SEQ_DIR  = None   # None = usa percorso relativo al progetto
 
@@ -401,13 +405,25 @@ def main():
 
     # ----- SECONDA VERSIONE -----
     
+    #result_official = run_pipeline(
+    #    OFFICIAL_MODEL_PATH, "NANO_SAR",
+    #    test_seq_dir, output_base, device, logger
+    #)
+
+    #result_custom = run_pipeline(
+    #    CUSTOM_MODEL_PATH, "SMALL_SAR",
+    #    test_seq_dir, output_base, device, logger
+    #)
+
+    # ----- TERZA VERSIONE -----
+    
     result_official = run_pipeline(
-        OFFICIAL_MODEL_PATH, "NANO_SAR",
+        OFFICIAL_MODEL_PATH, "SMALL_SAR",
         test_seq_dir, output_base, device, logger
     )
 
     result_custom = run_pipeline(
-        CUSTOM_MODEL_PATH, "SMALL_SAR",
+        CUSTOM_MODEL_PATH, "LARGE_SAR",
         test_seq_dir, output_base, device, logger
     )
 
