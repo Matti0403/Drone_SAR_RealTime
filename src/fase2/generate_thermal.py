@@ -29,7 +29,48 @@ from PIL import Image
 import torchvision.transforms as T
 import torchvision.transforms.functional as TF
 
-from fase2.cyclegan_model import ResNetGenerator
+import torch.nn as nn
+
+def get_norm_layer(num_features, num_groups=4):
+    return nn.GroupNorm(min(num_groups, num_features), num_features)
+
+class ResidualBlock(nn.Module):
+    def __init__(self, dim, norm_layer):
+        super().__init__()
+        self.block = nn.Sequential(
+            nn.ReflectionPad2d(1),
+            nn.Conv2d(dim, dim, 3, padding=0, bias=True),
+            norm_layer(dim), nn.ReLU(inplace=True),
+            nn.ReflectionPad2d(1),
+            nn.Conv2d(dim, dim, 3, padding=0, bias=True),
+            norm_layer(dim),
+        )
+    def forward(self, x): return x + self.block(x)
+
+class ResNetGenerator(nn.Module):
+    def __init__(self, input_nc=3, output_nc=3, ngf=64, n_blocks=9):
+        super().__init__()
+        layers = [
+            nn.ReflectionPad2d(3),
+            nn.Conv2d(input_nc, ngf, 7, padding=0, bias=True),
+            get_norm_layer(ngf), nn.ReLU(inplace=True),
+        ]
+        for mult in [1, 2]:
+            layers += [
+                nn.Conv2d(ngf*mult, ngf*mult*2, 3, stride=2, padding=1, bias=True),
+                get_norm_layer(ngf*mult*2), nn.ReLU(inplace=True),
+            ]
+        for _ in range(n_blocks):
+            layers.append(ResidualBlock(ngf*4, get_norm_layer))
+        for mult in [4, 2]:
+            layers += [
+                nn.ConvTranspose2d(ngf*mult, ngf*mult//2, 3, stride=2,
+                                   padding=1, output_padding=1, bias=True),
+                get_norm_layer(ngf*mult//2), nn.ReLU(inplace=True),
+            ]
+        layers += [nn.ReflectionPad2d(3), nn.Conv2d(ngf, output_nc, 7, padding=0), nn.Tanh()]
+        self.model = nn.Sequential(*layers)
+    def forward(self, x): return self.model(x)
 
 try:
     from tqdm import tqdm
@@ -41,7 +82,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # CONFIGURAZIONE
 # ---------------------------------------------------------------------------
-G_AB_WEIGHTS    = "runs/fase2/cyclegan_<timestamp>/G_AB_final.pth"  # aggiorna con il tuo run
+G_AB_WEIGHTS    = "runs/fase2/cyclegan_run/G_AB_final.pth"  # aggiorna con il tuo run
 DATASET_SAR     = "datasets/dataset_sar"
 DATASET_THERMAL = "datasets/dataset_sar_thermal"
 IMG_SIZE        = 256
