@@ -1,37 +1,62 @@
-# FlyPose-SAR — Documentazione Tecnica Fase 2: ThermalGAN
-# Stato: IN CORSO (training CycleGAN su Kaggle)
+# FlyPose-SAR — Documentazione Tecnica Fase 2: ThermalGAN + Pix2Pix Multi-Palette
+# Stato: COMPLETATA
 
 ## Obiettivo
 
-Estendere il sistema FlyPose-SAR al dominio termico LWIR per operatività
-in condizioni di fumo e visibilità degradata tipiche degli incendi boschivi.
+Estendere il sistema FlyPose-SAR al dominio termico LWIR per operativita'
+in condizioni di fumo e visibilita' degradata tipiche degli incendi boschivi.
 Il fumo denso rende lo spettro RGB completamente inutilizzabile — i sensori
 termici vedono attraverso il fumo rilevando la firma termica dei corpi.
+Hardware di riferimento del cliente: DJI Mavic 3T e DJI Matrice 4T.
 
 ## Problema risolto
 
 Non esistono dataset aerei annotati con keypoints nel dominio termico.
-La soluzione adottata è una CycleGAN che traduce i frame RGB di VisDrone
-in immagini termiche sintetiche. Poiché la cycle consistency loss preserva
-la geometria spaziale, le annotazioni (box GT + 17 keypoints) restano valide
-sulle immagini tradotte — eliminando completamente il costo di annotazione
-manuale nel dominio LWIR.
+La soluzione adottata traduce i frame RGB di VisDrone in immagini termiche
+sintetiche tramite reti generative (CycleGAN). Poiche' la geometria spaziale
+e' preservata, le annotazioni (box GT + 17 keypoints) restano valide sulle
+immagini tradotte — eliminando completamente il costo di annotazione manuale
+nel dominio LWIR.
+
+---
+
+## Evoluzione della pipeline
+
+Il piano originale prevedeva CycleGAN con dominio B = LLVIP. Dopo analisi
+sperimentale la pipeline e' stata aggiornata in tre step:
+
+| Step | Intervento | Risultato |
+|---|---|---|
+| 1 | CycleGAN + LLVIP | Non converge — mismatch geometrico frontale vs zenitale |
+| 2 | CycleGAN + HIT-UAV | Converge in 50 epoche. Bias luminanza residuo identificato |
+| 3 | Pix2Pix + KAIST | Risultato negativo — KAIST notturno incompatibile con VisDrone diurno |
+| 4 (finale) | CycleGAN HIT-UAV + colormap post-processing | Pipeline adottata per il dataset multi-palette |
+
+### Nota sul ruolo della Pix2Pix — Risultato negativo documentato
+
+La Pix2Pix su KAIST ha costituito un percorso esplorativo con risultato
+negativo: KAIST e' acquisito di notte da veicolo in scene urbane stradali —
+distribuzione troppo distante da VisDrone zenitale diurno. Il generatore
+produceva frame quasi uniformemente scuri su scene di test.
+Il risultato ha confermato che il problema non e' l'architettura della GAN
+ma la disponibilita' di dati paired nel dominio corretto.
+Il multi-palette e' stato ottenuto applicando cv2.applyColorMap() sull'output
+grayscale della CycleGAN, senza necessita' di riallenare la rete.
 
 ---
 
 ## Dataset
 
-| Dataset | Dominio | Immagini | Uso |
-|---------|---------|----------|-----|
-| VisDrone dataset_sar (images/train) | A — RGB zenitale | 20.420 frame | Input per traduzione |
-| LLVIP infrared/train | B — LWIR reale | 12.025 (sub 5K) | Insegna la firma termica umana |
-
-**LLVIP:** Low-Light Visible-Infrared Image Pairs
-Kaggle: `afradhossain/llvip-dataset` → `LLVIP/infrared/train/`
+| Dataset | Dominio | Immagini | Uso | Esito |
+|---------|---------|----------|-----|-------|
+| VisDrone dataset_sar (images/train) | A — RGB zenitale | 20.420 frame | Input CycleGAN | Usato |
+| LLVIP infrared/train | B — LWIR reale | 12.025 (sub 5K) | Dominio B originale | Abbandonato (mismatch geometrico) |
+| HIT-UAV images/train | B — LWIR zenitale | ~2.000 frame | Dominio B finale | Usato |
+| KAIST Multispectral Pedestrian | Paired RGB+LWIR | 95k coppie | Training Pix2Pix | Risultato negativo |
 
 ---
 
-## Architettura CycleGAN
+## Architettura CycleGAN (soluzione adottata)
 
 | Componente | Architettura | Ruolo |
 |---|---|---|
@@ -43,175 +68,205 @@ Kaggle: `afradhossain/llvip-dataset` → `LLVIP/infrared/train/`
 
 ### Loss functions
 
-- **Adversarial Loss (LSGAN)** — MSELoss: più stabile di BCE, evita vanishing gradient
+- **Adversarial Loss (LSGAN)** — MSELoss: piu' stabile di BCE, evita vanishing gradient
 - **Cycle Consistency Loss** — G_BA(G_AB(A)) ≈ A e G_AB(G_BA(B)) ≈ B. Peso λ=10
 - **Identity Loss** — G_AB(B) ≈ B. Peso λ_idt=5
 
-### Iperparametri
+### Iperparametri CycleGAN
 
 | Parametro | Valore | Motivazione |
 |---|---|---|
 | img_size | 256px | Standard CycleGAN |
-| batch_size | 4 | GroupNorm + 2×T4, stabile in VRAM |
-| n_epochs | 100 + 100 decay | 200 totali |
+| batch_size | 8 (4/GPU × 2×T4) | GroupNorm + DataParallel stabile in VRAM |
+| n_epochs | 50 (fermato) | Convergenza a epoca 40, miglioramento marginale dopo |
 | lr | 0.0002 | Standard Adam per GAN |
 | beta1 | 0.5 | Adam beta1 per GAN |
 | lambda_cycle | 10.0 | Peso cycle loss |
 | lambda_identity | 5.0 | 0.5 × lambda_cycle |
 | norm_layer | GroupNorm | Compatibile con batch > 1 e DataParallel |
-| MAX_STEPS_PER_EPOCH | 500 | Limita steps per sessione Kaggle |
+| Crop strategy | Person-aware 70% | 70% crop centrati su persona GT |
+
+### Loss finali CycleGAN (epoca 50)
+
+- G_loss: 1.395
+- D_loss: 0.232
+- Cycle_loss: 0.011
 
 ---
 
-## Training su Kaggle
+## Architettura Pix2Pix (esplorazione, risultato negativo)
 
-### Configurazione
-
-- **Hardware:** GPU T4 x2 (DataParallel)
-- **Dataset:** dataset_sar + llvip-dataset
-- **Notebook:** `thermalgan_final.ipynb`
-- **Checkpoint ogni:** 5 epoche
-
-### Prima sessione
-
-Esegui celle in ordine: **1 → 2 → 3 → 4 → 5 → 6 → 7 → 8**
-
-### Sessioni successive (resume)
-
-Esegui celle: **1 → 2 → 3 → 4 → 5 → RESUME → 7 → 8**
-
-Prima di eseguire la cella RESUME:
-1. Carica lo zip della sessione precedente su Kaggle come dataset
-2. Aggiorna `RESUME_CHECKPOINT` con il percorso corretto:
-```python
-RESUME_CHECKPOINT = '/kaggle/input/<nome-dataset>/checkpoint_epochXXX.pth'
-```
-
-Per trovare il percorso esatto dei dataset aggiunti:
-```python
-from pathlib import Path
-for d in Path('/kaggle/input').iterdir():
-    print(d.name)
-    for sub in d.iterdir():
-        print(f"  {sub.name}")
-        if sub.is_dir():
-            for f in sub.iterdir():
-                print(f"    {f.name}")
-```
-
-### Cella 8 — salva zip prima di chiudere
-
-Sempre eseguire la cella 8 prima di chiudere la sessione.
-Scarica `cyclegan_results.zip` dal pannello Output → scarica.
+| Componente | Architettura | Differenza vs CycleGAN |
+|---|---|---|
+| G | UNet con skip connections | Supervisione diretta coppia reale; no ciclo inverso |
+| D | PatchGAN 70×70 condizionato (6ch) | Riceve coppia (RGB+thermal); giudica coerenza coppia |
+| Loss G | LSGAN + L1 × 100 | L1 confronto diretto output vs thermal reale |
+| Loss D | LSGAN su coppie reali vs false | Stessa formula ma su coppie, non immagini singole |
 
 ---
 
-## Come capire quando fermarsi
+## Pipeline multi-palette (5 palette DJI)
 
-Non serve arrivare a 200 epoche. Ferma quando la **visual grid** è
-soddisfacente. Dopo ogni sessione:
+I sensori DJI Mavic 3T e Matrice 4T permettono di cambiare la palette in
+tempo reale da DJI Pilot 2. Per garantire detection robusta su qualsiasi
+palette il dataset sintetico viene generato in 5 varianti:
 
-```bash
-python src/fase2/plot_cyclegan.py
-```
-
-**Criteri di accettazione:**
-- Zone calde visibili su testa e torso delle persone nel thermal sintetico
-- Sfondo scuro/freddo
-- Ciclo A→B→A ricostruisce l'immagine originale in modo riconoscibile
-- SSIM ciclo A→B→A > 0.75
-
-**Loss come indicatore:**
-- G_loss scende e si stabilizza (~2.5-3.5) ✓
-- D_A e D_B intorno a 0.18-0.25 (equilibrio) ✓
-- Cyc_loss scende costantemente ✓
+| Palette | Colormap applicata | Palette DJI corrispondente |
+|---|---|---|
+| white_hot | Grayscale puro | White Hot |
+| black_hot | Inversione grayscale | Black Hot |
+| iron_red | cv2.COLORMAP_INFERNO | Iron Red (default DJI) |
+| rainbow1 | cv2.COLORMAP_JET | Rainbow 1 |
+| hot_iron | cv2.COLORMAP_HOT | Hot Iron |
 
 ---
 
-## Pipeline completa Fase 2
+## Risultati
 
-### Step 1 — Training CycleGAN su Kaggle
-```
-thermalgan_final.ipynb
-→ G_AB_final.pth + checkpoint_epochXXX.pth
-```
+### Fase 2 — Fine-tuning YOLO Thermal (CycleGAN sintetico)
 
-### Step 2 — Verifica qualità traduzione (in locale)
-```bash
-python src/fase2/plot_cyclegan.py
-```
-Controlla visual grid. Se SSIM > 0.75 procedi.
+| Metrica | Fase 1 RGB | Fase 2 Thermal | Delta |
+|---|---|---|---|
+| Box mAP@0.5 | 0.5961 | 0.7994 | +34% |
+| Pose mAP@0.5 | 0.3852 | 0.5505 | +43% |
+| Box Precision | 0.6492 | 0.7928 | +22% |
+| Box Recall | 0.5626 | 0.7593 | +35% |
 
-### Step 3 — Generazione dataset termico sintetico
-```bash
-python src/fase2/generate_thermal.py
-```
-Applica G_AB a tutti i 22.671 frame di dataset_sar.
-Output: `datasets/dataset_sar_thermal/` con stesse annotazioni.
+### Fase 2b — Fine-tuning YOLO Multi-Palette
 
-**Nota:** se hai rigenerato dataset_sar con il fix v2 dei keypoints,
-la GAN non va riallenata — le immagini RGB sono identiche,
-sono cambiate solo le label. Esegui generate_thermal.py
-sul nuovo dataset_sar e otterrai dataset_sar_thermal con
-annotazioni corrette.
+| Metrica | Fase 1 RGB | Fase 2b Multi-Palette | Delta |
+|---|---|---|---|
+| Box mAP@0.5 | 0.5961 | 0.8541 | +43% |
+| Pose mAP@0.5 | 0.3852 | 0.5790 | +50% |
+| Precision | 0.6492 | 0.8578 | +32% |
+| Recall | 0.5626 | 0.7814 | +39% |
 
-### Step 4 — Fine-tuning YOLO sul dominio termico
-```bash
-# Aggiorna data.yaml per puntare a dataset_sar_thermal
-# Poi lancia il training su Kaggle con thermalgan_final.ipynb
-python src/train.py
-```
-Parti dai pesi best.pt della Fase 1 (transfer learning progressivo).
-Traina Nano, Small e Large sul dataset termico.
+**Nota importante:** valutazione su val set sintetico generato dalla stessa
+CycleGAN del training. Le metriche misurano coerenza interna del dominio
+sintetico, non la performance su termico reale DJI.
 
-### Step 5 — Valutazione formale
-```bash
-python src/evaluate.py
-```
-Confronto modelli RGB (Fase 1) vs modelli Thermal (Fase 2).
-Metrica chiave: delta mAP50 RGB→Thermal.
+### Bias della luminanza — limite strutturale identificato
+
+La CycleGAN impara la correlazione statistica luminanza RGB / intensita'
+termica invece della vera firma LWIR dei corpi. Questo introduce:
+- Falsi positivi su strutture luminose non biologiche mappate come calde
+- Falsi negativi su persone con vestiti scuri mappate come fredde
+
+Non risolvibile con piu' dati sintetici — richiede dati termici reali DJI.
+Richiesta inoltrata formalmente alla Regione Calabria.
 
 ---
 
-## Struttura file Fase 2
+## File e struttura
 
 ```
 src/fase2/
-├── __init__.py
-├── cyclegan_model.py      # ResNet-9, PatchGAN, ImageBuffer, GroupNorm
-├── cyclegan_dataset.py    # UnpairedDataset dominio A+B, subsample
-├── train_cyclegan.py      # training loop locale (alternativa a notebook)
-├── generate_thermal.py    # applica G_AB a dataset_sar
-└── plot_cyclegan.py       # loss curves + visual grid qualità
+  cyclegan_model.py                    # ResNet-9, PatchGAN, ImageBuffer, GroupNorm
+  cyclegan_dataset.py                  # UnpairedDataset dominio A+B, subsample
+  generate_thermal.py                  # applica G_AB CycleGAN a dataset_sar (grayscale)
+  generate_thermal_multipalette.py     # genera dataset con 5 palette DJI
+  plot_cyclegan.py                     # loss curves + visual grid qualita'
+
+runs/fase2/
+  cyclegan_run/
+    G_AB_final.pth                     # generatore CycleGAN RGB→Thermal
+    G_BA_final.pth                     # generatore inverso (non usato in inferenza)
+    checkpoint_epoch050.pth            # checkpoint completo
+    training_history.json              # loss per epoca
+  pix2pix_run_grayscale/
+    G_pix2pix_final.pth                # generatore Pix2Pix (risultato negativo, non usato)
+    training_history.json
+  flypose_thermal_large/
+    weights/best.pt                    # modello YOLO thermal CycleGAN (Fase 2)
+  flypose_multipalette_large/
+    weights/best.pt                    # modello YOLO thermal multi-palette (Fase 2b) ← PRINCIPALE
+
+datasets/
+  dataset_sar/                         # RGB originale con annotazioni
+  dataset_sar_thermal/                 # thermal CycleGAN (grayscale)
+  dataset_sar_thermal_multipalette/    # 5 palette DJI
+    white_hot/ black_hot/ iron_red/ rainbow1/ hot_iron/
+      images/train/ images/val/ images/test/<seq>/
+      labels/train/ labels/val/
 ```
+
+---
+
+## Demo Launcher — sistema di visualizzazione real-time
+
+Launcher GUI (tkinter, dark mode) per la demo in tempo reale.
+
+```powershell
+cd C:\Temp\FlyPose
+.\venv\Scripts\python.exe src/demo_launcher.py
+```
+
+**Funzionalita':**
+- Selezione modalita' RGB (Fase 1) o Thermal Multi-Palette (Fase 2b)
+- Scelta palette DJI tra le 5 supportate (radio button)
+- Lista sequenze test con indicatore pre-conversione disponibile (✓/○)
+- Soglia confidenza variabile (slider 0.05-0.90)
+- Vista side-by-side RGB|Thermal con frame sincronizzati
+- In modalita' pre-convertita: zero latenza GAN, FPS massimi
+
+**Tasti durante la demo:**
+
+| Tasto | Funzione |
+|---|---|
+| Q / ESC | Esci |
+| S | Screenshot |
+| P | Pausa / Riprendi |
+| W | Toggle wireframe scheletro |
+| B | Toggle bounding box |
+| I | Toggle info overlay |
+| T | Toggle side-by-side |
+| +/- | Aumenta/Diminuisci soglia confidenza |
 
 ---
 
 ## Note su Windows — Bug Apostrofo
 
-Stesso problema della Fase 1 — il path `MATTIA-D'AGOSTINO` causa crash.
-Per generate_thermal.py e plot_cyclegan.py assicurati che i percorsi
-di input/output puntino a `C:\Temp\` tramite junction points.
+Il path `MATTIA-D'AGOSTINO` causa crash in alcuni tool.
+Soluzione: junction point su `C:\Temp\FlyPose\`.
+
+```powershell
+# Crea junction point (eseguire come amministratore)
+New-Item -ItemType Junction -Path "C:\Temp\FlyPose" `
+  -Target "C:\Users\MATTIA-D'AGOSTINO\Desktop\Drone_SAR_RealTime"
+
+# Lancia sempre da qui
+cd C:\Temp\FlyPose
+.\venv\Scripts\python.exe src/demo_launcher.py
+```
 
 ---
 
 ## Stato attuale
 
-| Attività | Stato |
+| Attivita' | Stato |
 |---|---|
 | Architettura CycleGAN implementata | ✓ Completata |
-| Dataset LLVIP confermato | ✓ Completata |
-| Training CycleGAN su Kaggle | ⟳ In corso (~epoca 10/200) |
-| Verifica qualità visual grid | ◷ Da fare |
-| Generazione dataset_sar_thermal | ◷ Da fare |
-| Fine-tuning YOLO termico | ◷ Da fare |
-| Valutazione RGB vs Thermal | ◷ Da fare |
+| Dataset LLVIP testato (risultato negativo) | ✓ Documentato |
+| Sostituzione dominio B con HIT-UAV | ✓ Completata |
+| Training CycleGAN 50 epoche su Kaggle T4×2 | ✓ Completata |
+| Verifica qualita' visual grid (SSIM > 0.75) | ✓ Completata |
+| Generazione dataset_sar_thermal (22.671 frame) | ✓ Completata |
+| Fine-tuning YOLO Large termico (Fase 2) | ✓ Completata — Box mAP +34% |
+| Training Pix2Pix su KAIST (esplorazione) | ✓ Completata — risultato negativo |
+| Generazione dataset multi-palette 5 palette DJI | ✓ Completata |
+| Fine-tuning YOLO Large multi-palette (Fase 2b) | ✓ Completata — Box mAP +43% |
+| Conversione sequenze test in 5 palette | ✓ Completata |
+| Demo Launcher GUI con side-by-side | ✓ Completata |
+| Validazione su termico reale DJI | ⏳ In attesa dati Regione Calabria |
 
 ---
 
 ## Riferimenti
 
 - Zhu et al. (2017) — CycleGAN: Unpaired Image-to-Image Translation. ICCV 2017.
-- Mao et al. (2017) — LSGAN: Least Squares Generative Adversarial Networks. ICCV 2017.
-- Shrivastava et al. (2017) — Learning from Simulated Images (ReplayBuffer). CVPR 2017.
+- Isola et al. (2017) — Pix2Pix: Image-to-Image Translation with Conditional GANs. CVPR 2017.
+- Hwang et al. (2015) — KAIST Multispectral Pedestrian Detection Benchmark. CVPR 2015.
 - Wang et al. (2021) — LLVIP: Low-Light Visible-Infrared Image Pairs. ICCV 2021.
+- Mao et al. (2017) — LSGAN: Least Squares GAN. ICCV 2017.
+- Shrivastava et al. (2017) — Learning from Simulated Images (ReplayBuffer). CVPR 2017.
+- Xu et al. (2020) — BIRDSAI: Detection and Tracking in Aerial Infrared Imagery. WACV 2020.

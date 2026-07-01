@@ -1,23 +1,17 @@
 # src/demo_realtime.py
 # FlyPose-SAR — Demo real-time con webcam o video file
 #
-# MODALITA' TERMICO (--thermal):
-#   Carica il generatore G_AB e converte ogni frame RGB in termico sintetico
-#   prima di darlo al modello YOLO. Utile per testare il modello fine-tunato
-#   su termici senza avere un sensore LWIR fisico.
-#   Il frame originale RGB viene mostrato a sinistra, il termico a destra.
-#
 # USO:
-#   # Modalita' standard RGB
-#   python src/demo_realtime.py --source 0
+#   # Modalita' RGB
+#   python src/demo_realtime.py --source path/sequenza --model runs/fase1/fase1_large/weights/best.pt
 #
-#   # Modalita' termico sintetico (converte RGB→thermal prima dell'inferenza)
+#   # Modalita' thermal con palette specifica
 #   python src/demo_realtime.py --source path/sequenza --thermal \
+#       --palette iron_red \
 #       --gan-weights runs/fase2/cyclegan_run/G_AB_final.pth \
-#       --model runs/fase2/flypose_thermal_large/weights/best.pt
+#       --model runs/fase2/flypose_multipalette_large/weights/best.pt
 #
-#   # File video con salvataggio
-#   python src/demo_realtime.py --source video.mp4 --thermal --save
+# PALETTE DISPONIBILI: white_hot, black_hot, iron_red, rainbow1, hot_iron
 
 import cv2
 import torch
@@ -32,7 +26,18 @@ import torchvision.transforms as T
 from ultralytics import YOLO
 
 # ---------------------------------------------------------------------------
-# GENERATORE GROUPNORM (compatibile con pesi Kaggle)
+# PALETTE MAP
+# ---------------------------------------------------------------------------
+PALETTE_MAP = {
+    'white_hot' : None,
+    'black_hot' : 'INVERT',
+    'iron_red'  : cv2.COLORMAP_INFERNO,
+    'rainbow1'  : cv2.COLORMAP_JET,
+    'hot_iron'  : cv2.COLORMAP_HOT,
+}
+
+# ---------------------------------------------------------------------------
+# GENERATORE RESNET CYCLEGAN (GroupNorm — compatibile con G_AB_final.pth)
 # ---------------------------------------------------------------------------
 def get_norm_layer(num_features, num_groups=4):
     return nn.GroupNorm(min(num_groups, num_features), num_features)
@@ -79,7 +84,6 @@ class ResNetGenerator(nn.Module):
 def load_gan(weights_path: str, device: str) -> ResNetGenerator:
     G = ResNetGenerator(3, 3)
     state = torch.load(weights_path, map_location=device, weights_only=False)
-    # rimuovi prefisso 'module.' se presente (DataParallel)
     new_state = {k.replace('module.', ''): v for k, v in state.items()}
     G.load_state_dict(new_state)
     G.to(device).eval()
@@ -87,13 +91,14 @@ def load_gan(weights_path: str, device: str) -> ResNetGenerator:
 
 
 def frame_to_thermal(frame_bgr: np.ndarray, G_AB, device: str,
-                     gan_size: int = 640) -> np.ndarray:
+                     palette: str = 'iron_red', gan_size: int = 640) -> np.ndarray:
     """
-    Converte un frame BGR OpenCV in termico sintetico BGR tramite G_AB.
+    Converte un frame BGR in thermal sintetico con la palette specificata.
+    1. RGB → GAN → grayscale thermal
+    2. Applica colormap palette
     Ritorna frame BGR della stessa dimensione dell'input.
     """
     h, w = frame_bgr.shape[:2]
-    # BGR → PIL RGB
     pil = Image.fromarray(cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB))
     tf  = T.Compose([
         T.Resize((gan_size, gan_size)),
@@ -103,10 +108,21 @@ def frame_to_thermal(frame_bgr: np.ndarray, G_AB, device: str,
     with torch.no_grad():
         t   = tf(pil).unsqueeze(0).to(device)
         out = G_AB(t)[0].cpu() * 0.5 + 0.5
-    # Tensor → PIL → numpy BGR, resize alle dimensioni originali
+
+    # → grayscale
     thermal_pil = T.ToPILImage()(out.clamp(0, 1))
     thermal_pil = thermal_pil.resize((w, h), Image.BICUBIC)
-    return cv2.cvtColor(np.array(thermal_pil), cv2.COLOR_RGB2BGR)
+    gray = cv2.cvtColor(np.array(thermal_pil), cv2.COLOR_RGB2GRAY)
+
+    # applica palette
+    cmap = PALETTE_MAP.get(palette, cv2.COLORMAP_INFERNO)
+    if cmap is None:
+        result = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+    elif cmap == 'INVERT':
+        result = cv2.cvtColor(255 - gray, cv2.COLOR_GRAY2BGR)
+    else:
+        result = cv2.applyColorMap(gray, cmap)
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -148,14 +164,14 @@ def estimate_posture(keypoints: np.ndarray, box=None) -> str:
         if bh > 0 and bw > 0:
             ar_score = max(bw, bh) / min(bw, bh)
 
-    kpt_std_x = np.std(valid[:, 0])
-    kpt_std_y = np.std(valid[:, 1])
+    kpt_std_x  = np.std(valid[:, 0])
+    kpt_std_y  = np.std(valid[:, 1])
     kpt_spread = np.sqrt(kpt_std_x**2 + kpt_std_y**2)
 
     if box is not None:
         bw = abs(box[2] - box[0])
         bh = abs(box[3] - box[1])
-        box_diag = np.sqrt(bw**2 + bh**2)
+        box_diag     = np.sqrt(bw**2 + bh**2)
         spread_ratio = kpt_spread / max(box_diag, 1)
     else:
         spread_ratio = kpt_spread / 50.0
@@ -168,12 +184,9 @@ def estimate_posture(keypoints: np.ndarray, box=None) -> str:
         else:
             return "RANNICCHIATO" if spread_ratio > 0.45 else "IN PIEDI"
     else:
-        if spread_ratio > 0.45:
-            return "A TERRA"
-        elif spread_ratio > 0.30:
-            return "SEDUTO"
-        else:
-            return "IN PIEDI"
+        if spread_ratio > 0.45:   return "A TERRA"
+        elif spread_ratio > 0.30: return "SEDUTO"
+        else:                     return "IN PIEDI"
 
 POSTURE_COLORS = {
     "IN PIEDI":     (0, 255, 0),
@@ -206,13 +219,13 @@ def draw_skeleton(frame, keypoints, show_wireframe=True, kpt_radius=4, line_thic
             cv2.circle(frame, tuple(pt), kpt_radius+1, (0,0,0), 1, cv2.LINE_AA)
     return frame
 
-def draw_detection(frame, box, track_id, conf, posture, show_box=True):
+def draw_detection(frame, box, track_id, conf, posture=None, show_box=True):
     if not show_box:
         return frame
     x1,y1,x2,y2 = [int(v) for v in box]
-    color = POSTURE_COLORS.get(posture, (0,255,0))
+    color = (0, 255, 0)  # verde fisso
     cv2.rectangle(frame, (x1,y1), (x2,y2), color, 2, cv2.LINE_AA)
-    label = f"ID:{track_id} {conf:.2f} | {posture}"
+    label = f"ID:{track_id} {conf:.2f}"
     (tw,th),_ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.45, 1)
     y_label = max(y1-6, th+6)
     cv2.rectangle(frame, (x1, y_label-th-4), (x1+tw+4, y_label+2), color, -1)
@@ -220,14 +233,14 @@ def draw_detection(frame, box, track_id, conf, posture, show_box=True):
     return frame
 
 def draw_info_overlay(frame, fps, n_persons, conf_threshold, model_name,
-                      thermal_mode=False, show_info=True):
+                      thermal_mode=False, palette='', show_info=True):
     if not show_info:
         return frame
     h, w = frame.shape[:2]
     overlay = frame.copy()
     cv2.rectangle(overlay, (8,8), (320,130), (0,0,0), -1)
     cv2.addWeighted(overlay, 0.55, frame, 0.45, 0, frame)
-    mode_str = "TERMICO SINTETICO" if thermal_mode else "RGB"
+    mode_str = f"THERMAL [{palette.upper()}]" if thermal_mode else "RGB"
     info_lines = [
         f"FlyPose-SAR  [{mode_str}]",
         f"Modello: {model_name}",
@@ -237,49 +250,47 @@ def draw_info_overlay(frame, fps, n_persons, conf_threshold, model_name,
     ]
     colors = [(0,255,255) if i==0 else (220,220,220) for i in range(len(info_lines))]
     if thermal_mode:
-        colors[0] = (0,200,255)  # arancione per modalità termica
+        colors[0] = (0,200,255)
     for i, (line, color) in enumerate(zip(info_lines, colors)):
         cv2.putText(frame, line, (14, 28+i*17), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1, cv2.LINE_AA)
 
-    legend = [("IN PIEDI",(0,255,0)),("SEDUTO",(0,165,255)),
-              ("A TERRA",(0,0,255)),("INCERTO",(128,128,128))]
-    for i, (label, color) in enumerate(legend):
-        x = w - 130
-        y = 28 + i*18
-        cv2.circle(frame, (x, y-5), 5, color, -1)
-        cv2.putText(frame, label, (x+12, y), cv2.FONT_HERSHEY_SIMPLEX, 0.38, color, 1, cv2.LINE_AA)
-
-    keys = "[Q] Esci  [S] Screenshot  [P] Pausa  [W] Wire  [B] Box  [I] Info  [T] Toggle view"
+    keys = "[Q] Esci  [S] Screenshot  [P] Pausa  [W] Wire  [B] Box  [I] Info  [T] Side-by-side"
     cv2.putText(frame, keys, (10, h-10), cv2.FONT_HERSHEY_SIMPLEX, 0.32, (180,180,180), 1, cv2.LINE_AA)
     return frame
 
+def make_side_by_side(rgb_frame, thermal_frame, palette=''):
+    h_rgb, w_rgb = rgb_frame.shape[:2]
+    h_th,  w_th  = thermal_frame.shape[:2]
 
-def make_side_by_side(rgb_frame, thermal_frame, detections_on='thermal'):
-    """
-    Affianca RGB (sinistra) e Thermal (destra) con label.
-    Le detection vengono disegnate sul frame indicato da detections_on.
-    """
-    h, w = rgb_frame.shape[:2]
-    combined = np.zeros((h, w*2, 3), dtype=np.uint8)
-    combined[:, :w]  = rgb_frame
-    combined[:, w:]  = thermal_frame
+    # Porta entrambi alla stessa altezza
+    target_h = max(h_rgb, h_th)
+    if h_rgb != target_h:
+        scale = target_h / h_rgb
+        rgb_frame = cv2.resize(rgb_frame, (int(w_rgb*scale), target_h))
+    if h_th != target_h:
+        scale = target_h / h_th
+        thermal_frame = cv2.resize(thermal_frame, (int(w_th*scale), target_h))
 
-    # Label domini
-    cv2.putText(combined, "RGB Originale",    (10, 20),
+    h, w_rgb = rgb_frame.shape[:2]
+    h, w_th  = thermal_frame.shape[:2]
+
+    combined = np.zeros((h, w_rgb + w_th, 3), dtype=np.uint8)
+    combined[:, :w_rgb]        = rgb_frame
+    combined[:, w_rgb:]        = thermal_frame
+    cv2.putText(combined, "RGB Originale", (10, 20),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255,255,255), 1, cv2.LINE_AA)
-    cv2.putText(combined, "Thermal Sintetico", (w+10, 20),
+    cv2.putText(combined, f"Thermal [{palette.upper()}]", (w_rgb+10, 20),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0,200,255), 1, cv2.LINE_AA)
-    # Linea di separazione
-    cv2.line(combined, (w,0), (w,h), (100,100,100), 2)
+    cv2.line(combined, (w_rgb,0), (w_rgb,h), (100,100,100), 2)
     return combined
-
 
 # ---------------------------------------------------------------------------
 # MAIN DEMO
 # ---------------------------------------------------------------------------
 def run_demo(source, model_path: str, gan_weights: str = None,
-             thermal_mode: bool = False, conf: float = 0.40,
-             iou: float = 0.35, imgsz: int = 640,
+             thermal_mode: bool = False, palette: str = 'iron_red',
+             source_rgb: str = None, preconv_thermal: bool = False,
+             conf: float = 0.40, iou: float = 0.35, imgsz: int = 640,
              save_output: bool = False, side_by_side: bool = True):
 
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -290,7 +301,7 @@ def run_demo(source, model_path: str, gan_weights: str = None,
     print(f"  Modello     : {model_path}")
     print(f"  Sorgente    : {source}")
     print(f"  Device      : {device}")
-    print(f"  Modo        : {'TERMICO SINTETICO' if thermal_mode else 'RGB'}")
+    print(f"  Modo        : {'THERMAL [' + palette.upper() + ']' if thermal_mode else 'RGB'}")
     if thermal_mode:
         print(f"  GAN weights : {gan_weights}")
     print(f"  conf={conf}  iou={iou}  imgsz={imgsz}\n")
@@ -303,7 +314,7 @@ def run_demo(source, model_path: str, gan_weights: str = None,
             return
         print("[*] Caricamento generatore G_AB...")
         G_AB = load_gan(gan_weights, device)
-        print("[+] G_AB pronto.")
+        print(f"[+] G_AB pronto. Palette: {palette}")
 
     # Carica YOLO
     print("[*] Caricamento modello YOLO...")
@@ -315,6 +326,15 @@ def run_demo(source, model_path: str, gan_weights: str = None,
     frame_list = []
     frame_idx  = 0
     cap        = None
+
+    # Lista frame RGB parallela per side-by-side con frame pre-convertiti
+    rgb_frame_list = []
+    if source_rgb and preconv_thermal and side_by_side:
+        rgb_path = Path(source_rgb)
+        if rgb_path.is_dir():
+            rgb_frame_list = sorted([f for f in rgb_path.iterdir()
+                                      if f.suffix.lower() in {".jpg",".jpeg",".png"}])
+            print(f"[+] Sorgente RGB per side-by-side: {len(rgb_frame_list)} frame")
 
     src_path = Path(source) if isinstance(source, str) else None
     if src_path and src_path.is_dir():
@@ -332,8 +352,8 @@ def run_demo(source, model_path: str, gan_weights: str = None,
         if not cap.isOpened():
             print(f"[ERRORE] Impossibile aprire: {source}")
             return
-        w       = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        h       = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        w   = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        h   = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps_src = cap.get(cv2.CAP_PROP_FPS) or 30
         print(f"[+] Video: {w}x{h} @ {fps_src:.1f}fps")
 
@@ -344,20 +364,22 @@ def run_demo(source, model_path: str, gan_weights: str = None,
         out_dir.mkdir(parents=True, exist_ok=True)
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         out_w = w*2 if (thermal_mode and side_by_side) else w
-        out_path = out_dir / f"demo_{'thermal' if thermal_mode else 'rgb'}_{ts}.mp4"
+        out_path = out_dir / f"demo_{'thermal_'+palette if thermal_mode else 'rgb'}_{ts}.mp4"
         writer = cv2.VideoWriter(str(out_path), cv2.VideoWriter_fourcc(*"mp4v"), 30, (out_w, h))
         print(f"[+] Salvataggio: {out_path}")
 
     # Stato UI
-    show_wireframe  = True
-    show_box        = True
-    show_info       = True
-    show_sidebyside = side_by_side and thermal_mode
-    paused          = False
-    conf_threshold  = conf
-    fps_history     = []
-    t_prev          = time.time()
-    screenshot_dir  = Path("runs/demo/screenshots")
+    show_wireframe   = True
+    show_box         = True
+    show_info        = True
+    show_sidebyside  = side_by_side and (thermal_mode or preconv_thermal)
+    paused           = False
+    conf_threshold   = conf
+    current_palette  = palette
+    fps_history      = []
+    t_prev           = time.time()
+    screenshot_dir   = Path("runs/demo/screenshots")
+    display_frame    = np.zeros((h, w, 3), dtype=np.uint8)
 
     while True:
         key = cv2.waitKey(1) & 0xFF
@@ -379,37 +401,46 @@ def run_demo(source, model_path: str, gan_weights: str = None,
             show_info = not show_info
         elif key == ord('t'):
             show_sidebyside = not show_sidebyside
-            print(f"  Vista: {'side-by-side' if show_sidebyside else 'solo thermal'}")
         elif key == ord('+'):
             conf_threshold = min(0.95, conf_threshold + 0.05)
         elif key == ord('-'):
             conf_threshold = max(0.05, conf_threshold - 0.05)
 
         if paused:
-            cv2.imshow("FlyPose-SAR Demo", display_frame if 'display_frame' in dir() else np.zeros((h,w,3),dtype=np.uint8))
+            cv2.imshow("FlyPose-SAR Demo", display_frame)
             continue
 
         # Leggi frame
         if frame_list:
             if frame_idx >= len(frame_list):
                 frame_idx = 0
-            rgb_frame = cv2.imread(str(frame_list[frame_idx]))
+            inference_frame = cv2.imread(str(frame_list[frame_idx]))
+
+            # Se siamo in modalità pre-convertito side-by-side,
+            # carica anche il frame RGB originale corrispondente
+            if rgb_frame_list and frame_idx < len(rgb_frame_list):
+                rgb_frame = cv2.imread(str(rgb_frame_list[frame_idx]))
+                if rgb_frame is None:
+                    rgb_frame = inference_frame.copy()
+            else:
+                rgb_frame = inference_frame
+
             frame_idx += 1
-            if rgb_frame is None:
+            if inference_frame is None:
                 continue
         else:
-            ret, rgb_frame = cap.read()
+            ret, inference_frame = cap.read()
+            rgb_frame = inference_frame
             if not ret:
                 cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 continue
 
-        # Conversione termica
-        if thermal_mode and G_AB is not None:
-            inference_frame = frame_to_thermal(rgb_frame, G_AB, device)
-        else:
-            inference_frame = rgb_frame.copy()
+        # Conversione termica con GAN live (solo se non pre-convertito)
+        if thermal_mode and G_AB is not None and not preconv_thermal:
+            inference_frame = frame_to_thermal(rgb_frame, G_AB, device,
+                                               palette=current_palette)
 
-        # Inferenza YOLO sul frame (termico o RGB)
+        # Inferenza YOLO
         results = model.track(
             source   = inference_frame,
             conf     = conf_threshold,
@@ -428,7 +459,7 @@ def run_demo(source, model_path: str, gan_weights: str = None,
             fps_history.pop(0)
         fps_smooth = np.mean(fps_history)
 
-        # Rendering detection sul frame di inferenza
+        # Rendering detection
         n_persons = 0
         annotated = inference_frame.copy()
         if results and results[0].boxes is not None:
@@ -446,14 +477,18 @@ def run_demo(source, model_path: str, gan_weights: str = None,
                     annotated = draw_skeleton(annotated, kp_arr, show_wireframe)
 
         # Costruisce il frame da mostrare
-        if thermal_mode and show_sidebyside:
-            display_frame = make_side_by_side(rgb_frame, annotated)
+        is_thermal_display = thermal_mode or preconv_thermal
+        if is_thermal_display and show_sidebyside:
+            # Side-by-side: RGB originale a sinistra, thermal annotato a destra
+            # rgb_frame contiene sempre l'RGB (originale o copia del thermal se non disponibile)
+            display_frame = make_side_by_side(rgb_frame, annotated, current_palette)
         else:
             display_frame = annotated
 
         display_frame = draw_info_overlay(
             display_frame, fps_smooth, n_persons,
-            conf_threshold, model_name, thermal_mode, show_info)
+            conf_threshold, model_name,
+            thermal_mode or preconv_thermal, current_palette, show_info)
 
         cv2.imshow("FlyPose-SAR Demo", display_frame)
         if writer is not None:
@@ -472,23 +507,23 @@ def run_demo(source, model_path: str, gan_weights: str = None,
 # ---------------------------------------------------------------------------
 def main():
     parser = argparse.ArgumentParser(description="FlyPose-SAR — Demo real-time")
-    parser.add_argument("--source",      type=str, default="0",
-                        help="Sorgente: 0=webcam, path cartella frame, path video")
-    parser.add_argument("--model",       type=str,
-                        default=r"runs\fase1\fase1_large\weights\best.pt",
-                        help="Percorso best.pt del modello YOLO")
-    parser.add_argument("--thermal",     action="store_true",
-                        help="Attiva modalita' termico sintetico (richiede --gan-weights)")
-    parser.add_argument("--gan-weights", type=str,
-                        default=r"runs\fase2\cyclegan_run\G_AB_final.pth",
-                        help="Percorso G_AB_final.pth per la conversione RGB→Thermal")
-    parser.add_argument("--conf",        type=float, default=0.40)
-    parser.add_argument("--iou",         type=float, default=0.35)
-    parser.add_argument("--imgsz",       type=int,   default=640)
-    parser.add_argument("--save",        action="store_true",
-                        help="Salva video output in runs/demo/")
-    parser.add_argument("--no-sidebyside", action="store_true",
-                        help="Mostra solo il termico senza RGB affiancato")
+    parser.add_argument("--source",           type=str, default="0")
+    parser.add_argument("--source-rgb",       type=str, default=None,
+                        help="Path sequenza RGB originale per side-by-side con frame pre-convertiti")
+    parser.add_argument("--model",            type=str,
+                        default=r"runs\fase1\fase1_large\weights\best.pt")
+    parser.add_argument("--thermal",          action="store_true")
+    parser.add_argument("--preconv-thermal",  action="store_true",
+                        help="I frame in --source sono già termici pre-convertiti")
+    parser.add_argument("--palette",          type=str, default="iron_red",
+                        choices=list(PALETTE_MAP.keys()))
+    parser.add_argument("--gan-weights",      type=str,
+                        default=r"runs\fase2\cyclegan_run\G_AB_final.pth")
+    parser.add_argument("--conf",             type=float, default=0.40)
+    parser.add_argument("--iou",              type=float, default=0.35)
+    parser.add_argument("--imgsz",            type=int,   default=640)
+    parser.add_argument("--save",             action="store_true")
+    parser.add_argument("--no-sidebyside",    action="store_true")
     args = parser.parse_args()
 
     source = args.source
@@ -498,15 +533,18 @@ def main():
         pass
 
     run_demo(
-        source       = source,
-        model_path   = args.model,
-        gan_weights  = args.gan_weights,
-        thermal_mode = args.thermal,
-        conf         = args.conf,
-        iou          = args.iou,
-        imgsz        = args.imgsz,
-        save_output  = args.save,
-        side_by_side = not args.no_sidebyside,
+        source           = source,
+        model_path       = args.model,
+        gan_weights      = args.gan_weights,
+        thermal_mode     = args.thermal,
+        preconv_thermal  = args.preconv_thermal,
+        source_rgb       = args.source_rgb,
+        palette          = args.palette,
+        conf             = args.conf,
+        iou              = args.iou,
+        imgsz            = args.imgsz,
+        save_output      = args.save,
+        side_by_side     = not args.no_sidebyside,
     )
 
 if __name__ == "__main__":
